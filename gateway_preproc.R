@@ -4,7 +4,7 @@
 library(tidyverse)
 
 # data file directory
-directory = "C:/Users/Pixy/NYCDSA/Project1_Shiny/ICPSR_21600-V21/ICPSR_21600/"
+directory = "./ICPSR_21600-V21/ICPSR_21600/"
 i = c(1:31)
 
 # load original source .rda data files 
@@ -39,6 +39,8 @@ for(i in 1:j){
 
 
 # View and select relevant columns from data frames. 
+# Wave I: demographics, WP = relationship w/ parents, TO = substance use history, DS = deliquent behavior, 
+# PR = protective factors, RE = religious background/status, EE = economic expectations
 # Save to new file for retrieval.
 
 View(da21600.0001)
@@ -49,6 +51,8 @@ saveRDS(df_DS0001, file = './Add-Health_Data/df_DS0001.rds', compress = FALSE)
 
 
 # View and select relevant columns from data frames. 
+# Wave II: WP = relationship w/ parents, TO = substance use history, DS = deliquent behavior, 
+# PR = protective factors, RE = religious background/status, EE = economic expectations
 # Save to new file for analysis.
 
 View(da21600.0005)
@@ -58,6 +62,9 @@ saveRDS(df_DS0005, file = './Add-Health_Data/df_DS0005.rds', compress = FALSE)
 
 
 # View and select relevant columns from data frames. 
+# Wave III: WP = relationship w/ parents, ED = education level, LM = labor market/job history, 
+# MR = marriage and co-habitation, DS = deliquent behavior, TO = substance use history, 
+# RE = religious background/status
 # Save to new file for analysis.
 
 View(da21600.0008)
@@ -67,6 +74,8 @@ saveRDS(df_DS0008, file = './Add-Health_Data/df_DS0008.rds', compress = FALSE)
 
 
 # View and select relevant columns from data frames. 
+# Wave IV: WP = relationship w/ parents, ED = education level, LM = labor market/job history, 
+# RE = religious background/status, TO = substance use history, 
 # Save to new file for analysis.
 
 View(da21600.0022)
@@ -104,10 +113,6 @@ df_DS_comb_full <- df_DS_comb_full %>%
                H1GI6D_AS = H1GI6D, H1GI6E_OTH = H1GI6E, H1GI8_RACE = H1GI8)    
 
 str(df_DS_comb_full$H1GI8_RACE)
-
-
-df_DS_comb_full <- df_DS_comb_full %>% 
-    mutate(H1GI8_RACE = )
 
 race <- as.character(df_DS_comb_full$H1GI8_RACE)
 
@@ -248,16 +253,7 @@ class(df_DS_combined_full$IYEAR)
 levels(df_DS_combined_full$IYEAR)
 
 
-df_DS_combined_full <- df_DS_combined_full %>% 
-    mutate(H1GI8_RACE = fct_recode(H1GI8_RACE,
-                                   "White" = "(1) White",
-                                   "Black/African American" = "(2) Black/African American",
-                                   "American Indian/Native American" = "(3) American Indian/Native American",
-                                   "Asian/Pacific Islander" = "(4) Asian/Pacific Islander",
-                                   "Other" = "(5) Other"
-    ))
-
-
+# cleans prefix numbers from factor levels, helper function to mod_factors
 mod_fct_levels = function(add_var) {
     
     lev <- c(levels(add_var))
@@ -273,25 +269,35 @@ mod_fct_levels = function(add_var) {
     return(new_lev)
 }
 
-
-
-
+# recodes factor levels to be only descriptive labels
 mod_factors = function(add_var){
     new_lev <- mod_fct_levels(add_var) 
     old_lev <- levels(add_var)
     names(old_lev) = new_lev
     
     add_var <- fct_recode(add_var, !!!old_lev)
-    
 }
 
 
+# change factor levels for all wave 2 Protective Factor variables
+df_DS_pract$H1PR8 <- mod_factors(df_DS_pract$H1PR8)
+df_DS_pract$H2PR1 <- mod_factors(df_DS_pract$H2PR1) 
+df_DS_pract$H2PR2 <- mod_factors(df_DS_pract$H2PR2)  
+df_DS_pract$H2PR3 <- mod_factors(df_DS_pract$H2PR3)  
+df_DS_pract$H2PR4 <- mod_factors(df_DS_pract$H2PR4)  
+df_DS_pract$H2PR5 <- mod_factors(df_DS_pract$H2PR5)  
+df_DS_pract$H2PR6 <- mod_factors(df_DS_pract$H2PR6)  
+df_DS_pract$H2PR7 <- mod_factors(df_DS_pract$H2PR7)  
+df_DS_pract$H2PR8 <- mod_factors(df_DS_pract$H2PR8)
 
-df_DS_pract$H1GI1M <- mod_factors(df_DS_pract$H1GI1M)
+view(select(df_DS_pract, starts_with("H2PR")))
 
 
-levels(df_DS_pract$H1GI1M)
-str(df_DS_pract$IYEAR)
+# sanity check for mod_factors function calls
+# levels(df_DS_pract$H1PR1)
+# str(df_DS_pract$H1PR1)
+# summary(df_DS_pract$H1PR1)
+
 
 
 df_DS_pract$H1GI1Y <- df_DS_pract$H1GI1Y %>% 
@@ -311,10 +317,44 @@ df_DS_pract$H1GI1Y <- df_DS_pract$H1GI1Y %>%
 
 df_DS_Wo_WP <- select(df_DS_combined_full, -matches("^(H\\dWP)")) # select everything but "relations w/ parents"
 df_DS_Wo_h1gi6 <- select(df_DS_combined_full, -matches("^(H1GI6)")) # select everything but "full race data" (already aggregated)
+df_DS_Wo_DS <- select(df_DS_combined_full, -matches("^(H\\dDS)")) # select everything but "deliquency & violence"
+df_DS_Wo_RE <- select(df_DS_combined_full, -matches("^(H\\dRE)")) # select everything but "religion"
+df_DS_combined_full$H1TO1_TRYcig <- fct_explicit_na(df_DS_combined_full$H1TO1_TRYcig, na_level = "(Missing)")
+df_DS_combined_full$H1TO1_TRYcig <- fct_explicit_na(df_DS_combined_full$H1TO1_TRYcig, na_level = "(Skipped)")
 
 
 
-
-df_DS_Wo_h1gi6 -> df_DS_combined_full
+df_DS_pract -> df_DS_combined_full
 saveRDS(df_DS_combined_full, file = './Add-Health_Data/df_DS_combined_full.rds', compress = FALSE)
 df_DS_combined_full <- readRDS(file = './Add-Health_Data/df_DS_combined_full.rds')
+library(tidyverse)
+
+
+
+# change numerical 4-digit year to date object
+yr_to_date <- function( yyyy ){
+    require(lubridate)
+    yyyy = as.character(yyyy)
+    yyyy = paste0(yyyy, '0101')
+    yyyy = as_date(yyyy)
+}
+
+df_DS_combined_full$IYEAR = yr_to_date(df_DS_combined_full$IYEAR) 
+df_DS_combined_full$IYEAR2 = yr_to_date(df_DS_combined_full$IYEAR2) 
+df_DS_combined_full$IYEAR3 = yr_to_date(df_DS_combined_full$IYEAR3) 
+df_DS_combined_full$IYEAR4 = yr_to_date(df_DS_combined_full$IYEAR4) 
+
+
+# exact matches for select function
+cols_equ <- c("H2TO1","H3TO1","H4TO1","H2TO3","H3TO4","H4TO3","H2TO15","H3TO37","H4TO33","H1TO15","H2TO19","H3TO38","H4TO35","H1TO18","H2TO22",
+       "H3TO43","H4TO38","H2TO44","H3TO108","H4TO65B","H1TO32","H2TO46","H3TO110","H4TO71","H1TO35","H1TO36","H2TO50","H2TO51","H2TO52","H3TO111",
+       "H3TO112","H3TO113","H4TO65C","H1TO41","H1TO42","H2TO58","H2TO59","H2TO60","H3TO117","H3TO118","H3TO119","H4TO63","H4TO65E","H4TO93",
+       "H4TO94","H4TO97","H4TO98","H4TO99","H3ED1","H3ED2","H3ED3","H3ED4","H3ED5","H3ED6","H3ED7","H3ED8","H3ED9","H4ED1","H4ED2","H4ED9")
+
+
+# select final columns for analysis
+df_DS_final <- select(df_DS_combined_full, AID,BIO_SEX, 
+                      matches("^(H\\dGI|IYEAR|H1TO1_TRY|H1TO3_REG|H1TO12_TRY|H1TO30_TRY|H1TO34_TRY|H1TO40_TRYil|H\\dPR\\d)"),
+                      all_of(cols_equ))
+saveRDS(df_DS_final, file = './Add-Health_Data/df_DS_final.RDS', compress = F)
+                      
