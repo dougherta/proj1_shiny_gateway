@@ -17,23 +17,31 @@ fluidPage(theme = shinytheme("flatly"),
                                             "Wave IV: 2007-09" = "H4"),
                              selected = "H1"),
 
-                selectizeInput(inputId = "bio_sex",
-                               label = "Sex",
-                               choices = levels(add_data$BIO_SEX)),
+                
+                # checkboxInput(inputId = "bio_sex", label = "Group by sex", value = TRUE),
+                # selectizeInput(inputId = "bio_sex",
+                #                label = "Sex",
+                #                choices = levels(add_data$BIO_SEX)),
                 
                 selectizeInput(inputId = "race",
                                label = "Race",
                                choices = levels(add_data$H1GI8_RACE),
-                               selected = ""),
+                               selected = "Other"),
                 
-                selectizeInput(inputId = "yob",
-                               label = "Year of birth",
-                               choices = sort(unique(add_data$H1GI1Y)),
-                               selected = "")
+                # selectizeInput(inputId = "yob",
+                #                label = "Year of birth",
+                #                choices = sort(unique(add_data$H1GI1Y)),
+                #                selected = "")
                 
                 
             ),
             
-            mainPanel(plotlyOutput("count"))
+            mainPanel(
+                    
+                    plotlyOutput("countF"),
+                    
+                    plotlyOutput("countM")
+                    
+                )
         )
 )
