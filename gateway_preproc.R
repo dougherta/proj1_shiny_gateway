@@ -1,7 +1,8 @@
 # Preprocessing and data cleaning file
 
-
 library(tidyverse)
+
+
 
 # data file directory
 directory = "./ICPSR_21600-V21/ICPSR_21600/"
@@ -257,8 +258,8 @@ levels(df_DS_combined_full$IYEAR)
 mod_fct_levels = function(add_var) {
     
     lev <- c(levels(add_var))
-    
-    qf <- as.character(str_locate_all(lev, "\\) ")) 
+
+    qf <- as.character(str_locate_all(lev, "\\) "))
     qf <- tail(qf, 1) 
     qf <- unlist(strsplit(qf, "\\s|\\)"))
     qf <- as.integer(tail(qf, 1))
@@ -271,12 +272,23 @@ mod_fct_levels = function(add_var) {
 
 # recodes factor levels to be only descriptive labels
 mod_factors = function(add_var){
+    
     new_lev <- mod_fct_levels(add_var) 
     old_lev <- levels(add_var)
     names(old_lev) = new_lev
     
     add_var <- fct_recode(add_var, !!!old_lev)
 }
+
+
+tmplev <- c(levels(df_DS_final$H1TO3_REGcig))
+tmplev[3] = "Skipped"
+tmplev = trimws(tmplev, which = 'both')
+# tmplev[1] = "Never tried any other type of illegal drug"
+oldlev = levels(df_DS_final$H1TO3_REGcig)
+names(oldlev) = tmplev
+
+df_DS_final$H1TO3_REGcig <- fct_recode(df_DS_final$H1TO3_REGcig, !!!oldlev)
 
 
 # change factor levels for all wave 2 Protective Factor variables
@@ -312,15 +324,13 @@ df_DS_pract$H1GI1Y <- df_DS_pract$H1GI1Y %>%
 # df_DS_pract$H1GI4_H <- add.value.labels(df_DS_pract$H1GI4_H, lbls)
 
 
-# View and select relevant columns from data frames. 
-# Save to new file for analysis.
-
+# Remove unused sections from df - data was too large 
 df_DS_Wo_WP <- select(df_DS_combined_full, -matches("^(H\\dWP)")) # select everything but "relations w/ parents"
 df_DS_Wo_h1gi6 <- select(df_DS_combined_full, -matches("^(H1GI6)")) # select everything but "full race data" (already aggregated)
 df_DS_Wo_DS <- select(df_DS_combined_full, -matches("^(H\\dDS)")) # select everything but "deliquency & violence"
 df_DS_Wo_RE <- select(df_DS_combined_full, -matches("^(H\\dRE)")) # select everything but "religion"
-df_DS_combined_full$H1TO1_TRYcig <- fct_explicit_na(df_DS_combined_full$H1TO1_TRYcig, na_level = "(Missing)")
-df_DS_combined_full$H1TO1_TRYcig <- fct_explicit_na(df_DS_combined_full$H1TO1_TRYcig, na_level = "(Skipped)")
+
+
 
 
 
@@ -351,10 +361,22 @@ cols_equ <- c("H2TO1","H3TO1","H4TO1","H2TO3","H3TO4","H4TO3","H2TO15","H3TO37",
        "H3TO112","H3TO113","H4TO65C","H1TO41","H1TO42","H2TO58","H2TO59","H2TO60","H3TO117","H3TO118","H3TO119","H4TO63","H4TO65E","H4TO93",
        "H4TO94","H4TO97","H4TO98","H4TO99","H3ED1","H3ED2","H3ED3","H3ED4","H3ED5","H3ED6","H3ED7","H3ED8","H3ED9","H4ED1","H4ED2","H4ED9")
 
+# factor columns to be releveled with mututate_at below
+cols_fct <- c("H2TO1","H3TO1","H4TO1","H2TO3","H3TO4","H4TO3","H2TO15","H3TO37","H4TO33","H1TO15","H2TO19","H3TO38","H4TO35","H1TO18","H2TO22",
+              "H3TO43","H4TO38","H2TO44","H3TO108","H4TO65B","H4TO71","H1TO36","H2TO50","H3TO111","H3TO112","H4TO65C","H2TO58","H3TO117","H3TO118",
+              "H4TO63","H4TO65E","H4TO93","H4TO94","H4TO97","H4TO98","H4TO99","H3ED1","H3ED2","H3ED3","H3ED4","H3ED5","H3ED6","H3ED7","H3ED8","H3ED9",
+              "H4ED1","H4ED2","H4ED9")
+
 
 # select final columns for analysis
-df_DS_final <- select(df_DS_combined_full, AID,BIO_SEX, 
+df_DS_finTEST <- select(df_DS_combined_full, AID,BIO_SEX, 
                       matches("^(H\\dGI|IYEAR|H1TO1_TRY|H1TO3_REG|H1TO12_TRY|H1TO30_TRY|H1TO34_TRY|H1TO40_TRYil|H\\dPR\\d)"),
                       all_of(cols_equ))
 saveRDS(df_DS_final, file = './Add-Health_Data/df_DS_final.RDS', compress = F)
                       
+
+# change NA to 'Skipped' in factors
+test_df <- test_df %>% mutate_if(is.factor, fct_explicit_na, na_level = "( ) ( ) Skipped")
+test_df <- test_df %>% mutate_at(cols_fct, mod_factors)
+df_DS_final <- df_DS_final %>% mutate_at(vars(H2GI1M, H2GI1Y), mod_factors)
+
